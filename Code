@@ -1,1 +1,165 @@
-There is something here...eventually
+#importing libraries needed to make the charts
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import plotly.express as px
+import plotly.graph_objects as go
+
+# Suicide Rates Overview 1985 to 2016
+# source:
+# https://www.kaggle.com/datasets/russellyates88/suicide-rates-overview-1985-to-2016
+# Questions to be answered:
+#     1.Is there a bias towards sex
+#     2.What age range is more at risk
+
+
+# adding my own names to columns
+col_names=['Country', 'Year', 'Sex', 'Age', 'SuicideNum', 'Pop', 'Suicide_100k_pop', 
+           'Country_Year', 'HDI_Year', 'GDP_Year', 'GDP_per_Capita', 'Gen']
+SuicideDF= pd.read_csv(r'C:\Users\Renteria\Downloads\archive\master.csv', header=0, 
+                      names=col_names)
+SuicideDF.head()
+
+
+# grouping sucides per 100k by year
+year= list(range(1985, 2017))
+Suicide_per_100k= SuicideDF.groupby(['Year']).sum().Suicide_100k_pop.sort_index().tolist()
+
+
+# basic line graph showing showing year trend
+# Suicides seem to be on the decline
+# could be lack of data in the last years but from 2005 to 2010, it does look promising
+plt.plot(year, Suicide_per_100k)
+plt.title('Global Suicides By Year')
+plt.xlabel('Year')
+plt.ylabel('Suicides (per100k)')
+plt.show()
+
+
+#grouping suicides by sex
+sex=['Female','Male']
+Suicides_by_Sex_100k=SuicideDF.groupby(['Sex']).sum().Suicide_100k_pop.tolist()
+
+
+#about a 3.7x difference
+suicide_by_sex_fig = px.bar( y=Suicides_by_Sex_100k, x=sex,
+            title="Global Suicides by Sex")
+suicide_by_sex_fig.update_layout(xaxis_title= 'Sex', yaxis_title= 'Suicides (per100k)')
+suicide_by_sex_fig.show()
+
+
+# creating sepereate DF for male and female for sex by year dual line graph
+Male_SuicideDF= SuicideDF.drop(SuicideDF[(SuicideDF['Sex'] =='female')].index)
+Female_SuicideDF= SuicideDF.drop(SuicideDF[(SuicideDF['Sex'] =='male')].index)
+
+
+# adding data into lists for easier input into graph
+Male_Suicide_List=Male_SuicideDF.groupby(['Year']).sum().Suicide_100k_pop.sort_index().tolist()
+Female_Suicide_List=Female_SuicideDF.groupby(['Year']).sum().Suicide_100k_pop.sort_index().tolist()
+
+
+#Males are consistently at a higher risk
+Suicide_by_sex_dual= go.Figure()
+Suicide_by_sex_dual.add_trace(go.Scatter(
+    x=year,
+    y=Male_Suicide_List,
+    name="Male"       # this sets its legend entry
+))
+
+
+Suicide_by_sex_dual.add_trace(go.Scatter(
+    x=year,
+    y=Female_Suicide_List,
+    name="Female"
+))
+
+Suicide_by_sex_dual.update_layout(
+    title="Trend Over Time by Sex",
+    xaxis_title="Year",
+    yaxis_title="Suicides (per 100k)",
+    legend_title="Sex",
+    font=dict(
+        family="Courier New, monospace",
+        size=12,
+        color="RebeccaPurple" )
+)
+
+Suicide_by_sex_dual.show()
+
+
+# grouping data by age ranges
+Suicides_by_Age=SuicideDF.groupby(['Age']).sum().Suicide_100k_pop
+Ages=SuicideDF['Age'].unique().tolist()
+Ages.sort()
+
+
+# it seems like the elders are at higher risk. There's a trend that the older you get, the higher the risk
+suicide_by_age_fig = px.bar( y=Suicides_by_Age, x=Ages,
+            title="Total Suicides by Age")
+suicide_by_age_fig.update_layout(xaxis_title= 'Age', yaxis_title= 'Suicides (per100k)')
+suicide_by_age_fig.show()
+
+
+# seperating the data into it's own age range to be used in year line graph
+# i thought about making a function to streamline this but it was only 6 lines so I decided not to
+Age_Bracket1=SuicideDF[SuicideDF['Age'] == '15-24 years'].groupby(['Year']).sum().Suicide_100k_pop.sort_index().tolist()
+Age_Bracket2=SuicideDF[SuicideDF['Age'] == '25-34 years'].groupby(['Year']).sum().Suicide_100k_pop.sort_index().tolist()
+Age_Bracket3=SuicideDF[SuicideDF['Age'] == '35-54 years'].groupby(['Year']).sum().Suicide_100k_pop.sort_index().tolist()
+Age_Bracket4=SuicideDF[SuicideDF['Age'] == '5-14 years'].groupby(['Year']).sum().Suicide_100k_pop.sort_index().tolist()
+Age_Bracket5=SuicideDF[SuicideDF['Age'] == '55-74 years'].groupby(['Year']).sum().Suicide_100k_pop.sort_index().tolist()
+Age_Bracket6=SuicideDF[SuicideDF['Age'] == '75+ years'].groupby(['Year']).sum().Suicide_100k_pop.sort_index().tolist()
+
+
+#overall, the ages stay relatively stable to their correlation to the other lines
+Suicide_by_age_multi= go.Figure()
+Suicide_by_age_multi.add_trace(go.Scatter(
+    x=year,
+    y=Age_Bracket1,
+    name="15-24"       # this sets its legend entry
+))
+
+
+Suicide_by_age_multi.add_trace(go.Scatter(
+    x=year,
+    y=Age_Bracket2,
+    name="25-34"
+))
+
+Suicide_by_age_multi.add_trace(go.Scatter(
+    x=year,
+    y=Age_Bracket3,
+    name="35-54"
+))
+
+Suicide_by_age_multi.add_trace(go.Scatter(
+    x=year,
+    y=Age_Bracket4,
+    name="5-14"
+))
+
+Suicide_by_age_multi.add_trace(go.Scatter(
+    x=year,
+    y=Age_Bracket5,
+    name="55-74"
+))
+
+Suicide_by_age_multi.add_trace(go.Scatter(
+    x=year,
+    y=Age_Bracket6,
+    name="75+"
+))
+
+Suicide_by_age_multi.update_layout(
+    title="Trend Over Time by Age Group",
+    xaxis_title="Year",
+    yaxis_title="Suicides (per 100k)",
+    legend_title="Age Group",
+    font=dict(
+        family="Courier New, monospace",
+        size=12,
+        color="RebeccaPurple" )
+)
+
+Suicide_by_age_multi.show()
+
+
